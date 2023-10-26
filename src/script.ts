@@ -59,15 +59,8 @@ class ScreenUpdater{
         this.boardDiv?.addEventListener("click", this.clickHandler);
     }
 
-    public updateScreen(){
+    public updateBoard(){
         this.boardDiv && (this.boardDiv.textContent = "");
-        this.turnDiv && (this.turnDiv.textContent = "");
-
-        let activePlayer = this.gameManager.activePlayer;
-
-        this.turnDiv && (this.turnDiv.innerHTML = `
-        <p><span class="${activePlayer.color}">${activePlayer.name}</span> turn...</p>
-        `);
 
         let board = this.gameManager.gameBoard.board; 
         board.forEach((cellRow, indexRow) => {
@@ -83,13 +76,22 @@ class ScreenUpdater{
         });
     }
 
-    public win(winner: Player){
+    public updateTurn(){
+        this.turnDiv && (this.turnDiv.textContent = "");
+        let activePlayer = this.gameManager.activePlayer;
+
+        this.turnDiv && (this.turnDiv.innerHTML = `
+        <p><span class="${activePlayer.color}">${activePlayer.name}</span> turn...</p>
+        `);
+    }
+
+    public displayWin(winner: Player){
         this.turnDiv && (this.turnDiv.innerHTML = `
         <p><span class="${winner.color}">${winner.name}</span> WINS!!!</p>
         `);
     }
 
-    public draw(){
+    public displayDraw(){
         this.turnDiv && (this.turnDiv.innerHTML = `
         <p>DRAW</p>
         `);
@@ -110,7 +112,7 @@ class GameManager{
     gameBoard: GameBoard;
     screenUpdater: ScreenUpdater;
 
-    playing: boolean = true;
+    isPlaying: boolean = true;
 
     players: Player[];
     activePlayer: Player;
@@ -128,11 +130,12 @@ class GameManager{
 
         this.activePlayer = this.players[0];
 
-        this.screenUpdater.updateScreen();
+        this.screenUpdater.updateTurn();
+        this.screenUpdater.updateBoard();
     }
 
     public playRound(row: number, col: number){
-        if(!this.playing) return;
+        if(!this.isPlaying) return;
 
         this.gameBoard.placeToken(row, col, this.activePlayer.token, this.activePlayer.color);
         this.moveCount++;
@@ -143,68 +146,68 @@ class GameManager{
         //chekc col
         let s = this.activePlayer.token;
         for(var i = 0; i < n; i++){
-            if(board[i][row].value != s)
-            break;
-        if(i == n - 1)
-        {
-            console.log("Win for " + s)
-        }
-    }
-    
-    //check row
-    for(var i = 0; i < n; i++){
-        if(board[col][i].value != s){
-            break;
-        }
-        if(i == n - 1){
-            this.win();
-            return;
-        }
-    }
-    
-    if(row == col){
-        for(var i = 0; i < n; i++){
-            if(board[i][i].value != s){
+            if(board[row][i].value != s){
                 break;
             }
-                if(i == n - 1){
-                    this.win();
-                    return;
-                }
+            if(i == n - 1)
+            {
+                this.win();
+            }
+        }
+    
+        //check row
+        for(var i = 0; i < n; i++){
+            if(board[i][col].value != s){
+                break;
+            }
+            if(i == n - 1){
+                this.win();
             }
         }
         
+        if(row == col){
+            for(var i = 0; i < n; i++){
+                if(board[i][i].value != s){
+                    break;
+                }
+                if(i == n - 1){
+                    this.win();
+                }
+            }
+        }
+            
         if(row + col == n - 1){
             for(var i = 0; i < n; i++){
-                if(board[i][(n - 1) - i].value != s){
+                if(board[(n - 1) - i][i].value != s){
                     break;
                 }
                 
                 if(i == n - 1)
                 {
                     this.win();
-                    return;
                 }
             }
         }
         
         if(this.moveCount == (Math.pow(n, 2))){
             this.draw();
-            return;
         }
         
         this.switchActivePlayer();
-        this.screenUpdater.updateScreen();
+        this.screenUpdater.updateBoard();
+
+        if(this.isPlaying)
+            this.screenUpdater.updateTurn();
     }
 
     private win(){
-        this.screenUpdater.win(this.activePlayer);
-        this.playing = false;
+        this.screenUpdater.displayWin(this.activePlayer);
+        this.isPlaying = false;
     }
 
     private draw(){
-        this.screenUpdater.draw();
-        this.playing = false;
+        this.screenUpdater.displayDraw();
+        this.isPlaying = false;
     }
 
     private switchActivePlayer(){

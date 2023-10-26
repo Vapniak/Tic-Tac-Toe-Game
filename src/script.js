@@ -46,12 +46,9 @@ var ScreenUpdater = /** @class */ (function () {
         this.gameManager = gameManager;
         (_a = this.boardDiv) === null || _a === void 0 ? void 0 : _a.addEventListener("click", this.clickHandler);
     }
-    ScreenUpdater.prototype.updateScreen = function () {
+    ScreenUpdater.prototype.updateBoard = function () {
         var _this = this;
         this.boardDiv && (this.boardDiv.textContent = "");
-        this.turnDiv && (this.turnDiv.textContent = "");
-        var activePlayer = this.gameManager.activePlayer;
-        this.turnDiv && (this.turnDiv.innerHTML = "\n        <p><span class=\"".concat(activePlayer.color, "\">").concat(activePlayer.name, "</span> turn...</p>\n        "));
         var board = this.gameManager.gameBoard.board;
         board.forEach(function (cellRow, indexRow) {
             cellRow.forEach(function (cell, indexCol) {
@@ -60,10 +57,15 @@ var ScreenUpdater = /** @class */ (function () {
             });
         });
     };
-    ScreenUpdater.prototype.win = function (winner) {
+    ScreenUpdater.prototype.updateTurn = function () {
+        this.turnDiv && (this.turnDiv.textContent = "");
+        var activePlayer = this.gameManager.activePlayer;
+        this.turnDiv && (this.turnDiv.innerHTML = "\n        <p><span class=\"".concat(activePlayer.color, "\">").concat(activePlayer.name, "</span> turn...</p>\n        "));
+    };
+    ScreenUpdater.prototype.displayWin = function (winner) {
         this.turnDiv && (this.turnDiv.innerHTML = "\n        <p><span class=\"".concat(winner.color, "\">").concat(winner.name, "</span> WINS!!!</p>\n        "));
     };
-    ScreenUpdater.prototype.draw = function () {
+    ScreenUpdater.prototype.displayDraw = function () {
         this.turnDiv && (this.turnDiv.innerHTML = "\n        <p>DRAW</p>\n        ");
     };
     ScreenUpdater.prototype.clickHandler = function (e) {
@@ -79,7 +81,7 @@ var GameManager = /** @class */ (function () {
     function GameManager(playerOneName, playerTwoName) {
         if (playerOneName === void 0) { playerOneName = "Player One"; }
         if (playerTwoName === void 0) { playerTwoName = "Player Two"; }
-        this.playing = true;
+        this.isPlaying = true;
         this.moveCount = 0;
         this.gameBoard = new GameBoard(3);
         this.screenUpdater = new ScreenUpdater(this);
@@ -88,10 +90,11 @@ var GameManager = /** @class */ (function () {
             new Player(playerTwoName, Token.Circle, "text-blue-500")
         ];
         this.activePlayer = this.players[0];
-        this.screenUpdater.updateScreen();
+        this.screenUpdater.updateTurn();
+        this.screenUpdater.updateBoard();
     }
     GameManager.prototype.playRound = function (row, col) {
-        if (!this.playing)
+        if (!this.isPlaying)
             return;
         this.gameBoard.placeToken(row, col, this.activePlayer.token, this.activePlayer.color);
         this.moveCount++;
@@ -100,20 +103,20 @@ var GameManager = /** @class */ (function () {
         //chekc col
         var s = this.activePlayer.token;
         for (var i = 0; i < n; i++) {
-            if (board[i][row].value != s)
-                break;
-            if (i == n - 1) {
-                console.log("Win for " + s);
-            }
-        }
-        //check row
-        for (var i = 0; i < n; i++) {
-            if (board[col][i].value != s) {
+            if (board[row][i].value != s) {
                 break;
             }
             if (i == n - 1) {
                 this.win();
-                return;
+            }
+        }
+        //check row
+        for (var i = 0; i < n; i++) {
+            if (board[i][col].value != s) {
+                break;
+            }
+            if (i == n - 1) {
+                this.win();
             }
         }
         if (row == col) {
@@ -123,35 +126,34 @@ var GameManager = /** @class */ (function () {
                 }
                 if (i == n - 1) {
                     this.win();
-                    return;
                 }
             }
         }
         if (row + col == n - 1) {
             for (var i = 0; i < n; i++) {
-                if (board[i][(n - 1) - i].value != s) {
+                if (board[(n - 1) - i][i].value != s) {
                     break;
                 }
                 if (i == n - 1) {
                     this.win();
-                    return;
                 }
             }
         }
         if (this.moveCount == (Math.pow(n, 2))) {
             this.draw();
-            return;
         }
         this.switchActivePlayer();
-        this.screenUpdater.updateScreen();
+        this.screenUpdater.updateBoard();
+        if (this.isPlaying)
+            this.screenUpdater.updateTurn();
     };
     GameManager.prototype.win = function () {
-        this.screenUpdater.win(this.activePlayer);
-        this.playing = false;
+        this.screenUpdater.displayWin(this.activePlayer);
+        this.isPlaying = false;
     };
     GameManager.prototype.draw = function () {
-        this.screenUpdater.draw();
-        this.playing = false;
+        this.screenUpdater.displayDraw();
+        this.isPlaying = false;
     };
     GameManager.prototype.switchActivePlayer = function () {
         this.activePlayer = this.activePlayer === this.players[0] ? this.players[1] : this.players[0];
